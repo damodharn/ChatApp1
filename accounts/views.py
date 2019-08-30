@@ -8,9 +8,9 @@ import jwt
 from django.core.exceptions import ObjectDoesNotExist
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import EmailMessage
-
-# Create your views here.
 from django.shortcuts import render
+import os
+# Create your views here.
 
 
 @csrf_exempt
@@ -46,7 +46,7 @@ def signup(request):
             check if a previous user exists.'''
             try:
                 user = User.objects.get(username=request.POST['username'])  # Checking if user is present or not.
-                if not user:
+                if user:
                     return HttpResponse("Username Has Already Been Taken")
             except ObjectDoesNotExist:
                 '''If User doesn't exist 
@@ -63,27 +63,21 @@ def signup(request):
                     'email': user.email,
                     'username': user.username
                 }
-                print('After payload')
                 token = jwt.encode(payload, "SECRET_KEY", algorithm='HS256').decode('utf-8')  # .decode('utf-8')
-                print('\n\nTOKEN:', token, '\n\n')
                 current_site = get_current_site(request)
-                print('Current site:', current_site)
                 mail_subject = 'Activate your account by clicking below link.'
                 message = render_to_string('chat/account_active_email.html', {
                     'user': user.username,
                     'domain': current_site.domain,
                     'token': token
-                    }
-                )
-                print('after message')
+                }
+                                           )
                 to_email = user.email
-                print('\n\nEMAIL', to_email, '\n\n')
+
                 email = EmailMessage(
                     mail_subject, message, to=[to_email]
                 )
-                print("before email send")
                 email.send()
-                print('\n\nmail sent....\n\n')
                 return HttpResponse("Registered Successfully !!\nPlease confirm your email address to complete "
                                     "the registration by clicking link sent to ur email")
         else:
@@ -95,7 +89,7 @@ def signup(request):
 @csrf_exempt
 def activate(request, token):
     try:
-        payload = jwt.decode(token, "SECRET_KEY", algorithm='HS256')  # .decode('utf-8')
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithm='HS256')  # .decode('utf-8')
         uid = payload['uid']  # getting the user id from the payload
         user = User.objects.get(id=uid)  # getting the user through the id
         if not user:
@@ -136,7 +130,7 @@ def forget(request):
                 }
 
                 mail_subject = "Forgot password"  # mail subject
-                token = jwt.encode(payload, 'SECRET_KEY', algorithm='HS256').decode('utf-8')  # generating the token
+                token = jwt.encode(payload, os.getenv("SECRET_KEY"), algorithm='HS256').decode('utf-8')  # generating the token
                 message = render_to_string('chat/forget_password.html', {
                     'user': user.username,
                     "domain": current_site,
@@ -154,7 +148,7 @@ def forget(request):
 @csrf_exempt
 def reset(request, token):
     try:
-        payload = jwt.decode(token, 'SECRET_KEY', algorithm='HS256')
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithm='HS256')
         email = payload['email']
         password = password2 = payload['password']
         if password == password2:

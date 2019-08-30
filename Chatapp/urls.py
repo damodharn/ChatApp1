@@ -17,10 +17,7 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-
     path('admin/', admin.site.urls),
-    path('', include('accounts.urls')),  # mapping the url for login
-    # path('chat/', include('chat.urls')),
-    # path(''),  # mapping the url for registeration
-
+    path('chat/', include('chat.urls')),
+    path('', include('accounts.urls'))
 ]
